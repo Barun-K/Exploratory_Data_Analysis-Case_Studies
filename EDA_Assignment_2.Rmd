@@ -1,0 +1,264 @@
+---
+title: "EDA ASSIGNMENT - 2"
+author: "Barun Kumar(18125760015)"
+date: "20 September 2018"
+output: html_document
+---
+
+#######################################################################################
+Question 1 : World Health Organization 
+#######################################################################################
+
+Data Description
+A population of women who were at least 21 years old, of Pima Indian heritage and living near Phoenix, Arizona, was tested for diabetes according to World Health Organization criteria. The data were collected by the US National Institute of Diabetes and Digestive and Kidney Diseases. 
+These data frames contains the following columns:
+1)	Npreg: number of pregnancies.
+2)	Glu : plasma glucose concentration in an oral glucose tolerance test. 
+3)	Bp : diastolic blood pressure (mm Hg).
+4)	Skin : triceps skin fold thickness (mm).
+5)	Bmi : body mass index (weight in kg/(height in m)\^2).
+6)	Ped : diabetes pedigree function. 
+7)	Age : age in years. 
+8)	Type : Yes or No, for diabetic according to WHO criteria.
+
+
+```{r}
+
+train = read.csv("D:\\Move\\R Programming\\Programs\\EDA\\EDA Assignment 2\\Assignment 2 dataset\\train.csv")
+test = read.csv("D:\\Move\\R Programming\\Programs\\EDA\\EDA Assignment 2\\Assignment 2 dataset\\test.csv")
+str(train)
+str(test)
+
+```
+
+-------------------------------------------------------------------------------------------------------
+1)	What is the probability for someone age 35 with bmi of 32, to be diabetic?
+-------------------------------------------------------------------------------------------------------
+
+```{r}
+model1 <- glm(type~age+bmi,data=train,family=binomial("logit"))
+
+valdf1 <- data.frame(cbind("age" = 35,"bmi" = 32))
+valpred1 <- round(predict(model1, valdf1, type = "response"),2);valpred1
+```
+
+```{r}
+# Accuracy
+test$Pred1 <- round(predict(model1, test[,c(5,7)], type = "response"),2)
+test$Pred_admit1 <- ifelse(test$Pred1>=.50,"TRUE","FALSE")
+tab1 <- table(test$type,test$Pred_admit1)
+
+acc1 = round(sum(diag(table(test$type, test$Pred_admit1)))/nrow(test),2);acc1
+```
+
+-----------------------------------------------------------------------------------------------------------
+2)	According to your model what is the probability that a woman in your sample is diabetic 
+given age 55, a bmi 37, bp 68 and npreg of 2?
+-----------------------------------------------------------------------------------------------------------
+
+```{r}
+model2 <- glm(type~npreg+age+bmi+bp,data=train,family=binomial("logit"))
+
+valdf2 <- data.frame(cbind("npreg" = 2,age = 55,"bmi" = 37,"bp" = 68))
+valpred2 <- round(predict(model2, valdf2, type = "response"),2);valpred2
+```
+
+```{r}
+# Accuracy
+test$Pred2 <- round(predict(model2, test[,c(1,3,5,7)], type = "response"),2)
+test$Pred_admit2 <- ifelse(test$Pred2>=.50,"TRUE","FALSE")
+tab2 <- table(test$type,test$Pred_admit2);tab2
+
+acc2 = round(sum(diag(table(test$type, test$Pred_admit2)))/nrow(test),2);acc2
+```
+
+-------------------------------------------------------------------------------------------------------
+3)	3)	For a woman aged 35 and mother of 2 children, by how much does the probability of 
+diabetes increase, if her bmi was 35 instead of 25 according to the model? 
+-------------------------------------------------------------------------------------------------------
+```{r}
+model3 <- glm(type~npreg+age+bmi,data=train,family=binomial("logit"))
+
+valdf31 <- data.frame(cbind("age" = 35,"bmi" = 35,"npreg" = 2))
+valpred31 <- predict(model3, valdf31, type = "response");valpred31
+
+valdf32 <- data.frame(cbind("age" = 35,"bmi" = 25,"npreg" = 2))
+valpred32 <- predict(model3, valdf32, type = "response");valpred32
+
+diab_inc <- round(valpred31-valpred32,2);diab_inc
+
+```
+
+```{r}
+# Accuracy
+test$Pred3 <- round(predict(model3, test[,c(1,5,7)], type = "response"),2)
+test$Pred_admit3 <- ifelse(test$Pred3>=.50,"TRUE","FALSE")
+tab3 <- table(test$type,test$Pred_admit3);tab3
+
+acc3 = round(sum(diag(table(test$type, test$Pred_admit3)))/nrow(test),2);acc3
+```
+
+
+-------------------------------------------------------------------------------------------------------
+4)	What is the accuracy of Models?
+-------------------------------------------------------------------------------------------------------
+
+```{r}
+
+models_acc <- data.frame(acc1,acc2,acc3);models_acc
+
+```
+
+
+###############################################################################################################
+Question 2 : TITANIC
+###############################################################################################################
+
+Data Description
+Use data set Titanic
+
+```{r}
+
+titanic_d <- read.csv("D:\\Move\\R Programming\\Programs\\EDA\\EDA Assignment 2\\Assignment 2 dataset\\Titanic.csv")
+str(titanic_d)
+titan <- titanic_d[,c(2,3,5,6,7,8,10)]
+titan1 <- scale(titan[,c(2,4:7)])
+```
+
+--------------------------------------------------------------------------------------------------------
+1)	Apply the k-means algorithm to get 4 clusters. Remember to set the seed to 1234 so the results 
+are comparable. Note that you can remove few column, which are not used in K-means.
+---------------------------------------------------------------------------------------------------------
+
+```{r}
+
+set.seed(1234)
+cluster_4 = kmeans(titan1, 4,nstart = 20);cluster_4$centers
+
+```
+
+```{r}
+
+titan <- titanic_d[,c(2,3,5,6,7,8,10)]
+t <- table(titan$Sex,titan$Survived, cluster_4$cluster);t
+round(prop.table(t),2)
+```
+
+----------------------------------------------------------
+2)	Describe, in words, each of the clusters.
+----------------------------------------------------------
+# In Cluster 1st : the maximum male got died(34 % of total count)
+
+# In Cluster 2nd : almost died and survival count and proportion are equal
+
+# In cluster 3rd : most of female located in this cluster had survived
+
+# In Cluster 4th : Only 29 people located in this cluster,16 female survived
+
+----------------------------------------------------------------------------------------------------
+3)	Now, 4 clusters was an arbitrary choice. What seems like a reasonable number of clusters?
+----------------------------------------------------------------------------------------------------
+
+```{r}
+set.seed(1234)
+k1 <- kmeans(titan1,1)
+k2 <- kmeans(titan1,2)
+k3 <- kmeans(titan1,3)
+k4 <- kmeans(titan1,4)
+k5 <- kmeans(titan1,5)
+k6 <- kmeans(titan1,6)
+k7 <- kmeans(titan1,7)
+k8 <- kmeans(titan1,8)
+k9 <- kmeans(titan1,9)
+k10 <- kmeans(titan1,10)
+
+Error.vec <- c(k1$tot.withinss,k2$tot.withinss,k3$tot.withinss,k4$tot.withinss,
+               k5$tot.withinss,k6$tot.withinss,k7$tot.withinss,k8$tot.withinss,
+               k9$tot.withinss,k10$tot.withinss)
+plot(Error.vec,type = "b", col = "Red")
+
+```
+
+## Here in the graph we see the claerly the after 7th cluster the graph is slightly steady.
+## So we select the 6th cluster as ideal.
+
+###############################################################################################################
+```{r}
+library(dplyr)
+library(tidyr)
+library(keep)
+```
+
+#######################################################################################
+Question 3 : NFL PLAY Dataset
+#######################################################################################
+
+Data Description
+Use the NFL Play by Play 2009-2017 (v4).csv 
+Acknowledgements
+This dataset was compiled by Ron Yurko, Sam Ventura, and myself. Special shout-out to Ron for improving our current expected points and win probability models and compiling this dataset. All three of us are proud founders of the Carnegie Mellon Sports Analytics Club.
+
+
+```{r}
+
+nfl_play <- read.csv("D:\\Move\\R Programming\\Programs\\EDA\\EDA Assignment 2\\Assignment 2 dataset\\NFL Play by Play 2009-2017.csv")
+
+```
+
+----------------------------------------------------------
+1)	Get the number of missing data points per column.
+----------------------------------------------------------
+
+```{r}
+
+col_mv = data.frame(colSums(is.na(nfl_play)))
+colnames(col_mv) <- "col_mv"
+col_mv # Will result in dataframe with missing values count corresponding to each column
+
+```
+
+----------------------------------------------------------
+2)	Percent of data that is missing in terms of cells.
+----------------------------------------------------------
+
+```{r}
+
+per_mdata <- (sum(is.na(nfl_play))/prod(dim(nfl_play)))*100;per_mdata
+
+```
+
+
+-------------------------------------------------------------------------------------
+3)	Find the number of rows after removing all the rows that contain a missing value.
+--------------------------------------------------------------------------------------
+
+```{r}
+
+rem_na_rows <- nfl_play %>% na.omit(nfl_play)
+nrow(rem_na_rows)
+
+```
+
+
+------------------------------------------------------------------------------------------
+4)	Find the number of columns after removing all columns with at least one missing value.
+------------------------------------------------------------------------------------------
+
+```{r}
+
+rem_na_cols <- nfl_play[,colSums(is.na(nfl_play)) > 0]
+ncol(rem_na_cols)
+
+```
+
+-----------------------------------------------------------------------------------------
+5)	Replace all missing value by the mean value of that column.
+------------------------------------------------------------------------------------------
+
+```{r}
+
+nfl_num_int <- nfl_play[, sapply(nfl_play, class) != "factor"]
+mv_to_mean <- data.frame(lapply(nfl_num_int, function(x) ifelse(is.na(x), mean(x, na.rm = TRUE), x)))
+dim(mv_to_mean)
+sum(is.na(mv_to_mean))
+```
